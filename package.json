@@ -1,0 +1,25 @@
+{
+  "name": "cfpio-export-card",
+  "version": "1.0.0",
+  "description": "export cards from cfp.io",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run data && npm run generate",
+    "data": "node index.js",
+    "generate": "node generate-pdf-with-chrome",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jlandure",
+  "license": "ISC",
+  "dependencies": {
+    "chrome-launcher": "^0.3.0",
+    "chrome-remote-interface": "^0.23.3",
+    "node-static": "^0.7.9",
+    "request": "^2.81.0",
+    "request-promise-native": "^1.0.4",
+    "tough-cookie": "^2.3.2"
+  },
+  "devDependencies": {
+    "prettier": "^1.5.2"
+  }
+}

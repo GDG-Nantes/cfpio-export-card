@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+	    crossorigin="anonymous">
+	<style>
+		/*session export to print */
+
+		.export-web {
+			page-break-inside: avoid;
+			height: 220px;
+			background-color: #f7c63d!important;
+			margin-top: 20px;
+		}
+
+		.export-discovery {
+			page-break-inside: avoid;
+			height: 220px;
+			background-color: #da483c!important;
+			margin-top: 20px;
+		}
+
+		.export-cloud {
+			page-break-inside: avoid;
+			height: 220px;
+			background-color: #6388c5!important;
+			margin-top: 20px;
+		}
+
+		.export-mobile {
+			page-break-inside: avoid;
+			height: 220px;
+			background-color: #0c9a54!important;
+			margin-top: 20px;
+		}
+
+		.jumbotron {
+			background-color: #fff!important;
+			padding: 19px!important;
+			margin-bottom: 20px!important;
+			box-shadow: 0 8px 17px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+			border-radius: 2px!important;
+			border: 0!important;
+		}
+	</style>
+
+</head>
+
+<body>
+	<template id="sessionTemplate">
+	<div class="card col-xs-6">
+		<div class="col-xs-12">
+
+			<span class="track col-xs-3">
+				<span class="codelab glyphicon glyphicon-education"></span>
+				<span class="conference glyphicon glyphicon-bullhorn"></span>
+				<span class="quickie glyphicon glyphicon-time"></span>
+				<span class="trackName"></span>
+			</span>
+			<span class="sessionName col-xs-5"></span>
+			<span class="sessionSpeaker col-xs-4"></span>
+		</div>
+		<div class="sessionDesc col-xs-10"></div>
+		<div class="col-xs-2">
+			<span class="sessionMean pull-right jumbotron"></span>
+		</div>
+		<div class="indications col-xs-2 pull-right" style="padding: 0px;">
+			<span class="glyphicon glyphicon-user" style="width: 30px;"><span class="coSpeaker glyphicon glyphicon-user"></span>
+			</span>
+			<span class="transport glyphicon glyphicon-eur"></span>
+			<span class="hotel glyphicon glyphicon-home"></span>
+			<span class="travel glyphicon glyphicon-plane"></span>
+			<br>
+			<span style="width: 90px;">
+				<span class="diffBeginner glyphicon glyphicon-plus"></span>
+				<span class="diffConfirm glyphicon glyphicon-plus"></span>
+				<span class="diffExpert glyphicon glyphicon-plus"></span>
+			</span>
+			<span class="loveAndHate"></span>
+		</div>
+	</div>
+	</template>
+	<!-- fin ng-repeat-->
+
+	<script type="text/javascript">
+		(() => {
+
+			Array.prototype.groupBy = function(prop) {
+				return this.reduce(function(groups, item) {
+					var val = item[prop];
+					groups[val] = groups[val] || [];
+					groups[val].push(item);
+					return groups;
+				}, {});
+			}
+
+			const URL_SESSIONS = './sessions.json'
+			const options = {
+				method: 'GET',
+			};
+
+			let formatsMap = {},
+				tracksMap = {};
+
+
+			fetch(URL_SESSIONS, options)
+				.then((res) => res.json())
+				.then((data) => {
+					const sessions = data.sessions;
+					console.log(sessions[0])
+					const rates = data.rates;
+
+					const ratesGroupBy = rates && rates.groupBy('talkId');
+					sessions.sort((sessionA, sessionB) => sessionB.mean - sessionA.mean)
+					.forEach((session) => {
+						session.votes = ratesGroupBy && ratesGroupBy[session.id];
+						fillSession(session);
+					});
+
+				});
+
+			function fillSession(session){
+				// On prépare une ligne pour le tableau
+				const template = document.querySelector("#sessionTemplate");
+				const card = template.content.querySelector(".card");
+				const classTrack = session.trackLabel === 'Web' ? 'web' :
+								session.trackLabel === 'Mobile & IoT' ? 'mobile' :
+								session.trackLabel === 'Cloud, DevOps & BigData' ? 'cloud' : 'discovery';
+				card.classList.remove('export-web');
+				card.classList.remove('export-cloud');
+				card.classList.remove('export-mobile');
+				card.classList.remove('export-discovery');
+				card.classList.add(`export-${classTrack}`);
+
+				const spanTrack = template.content.querySelector('.trackName');
+				const spanConference = template.content.querySelector('.track .conference');
+				const spanCodelab = template.content.querySelector('.track .codelab');
+				const spanQuickie = template.content.querySelector('.track .quickie');
+				spanTrack.innerHTML = `[${classTrack}]`;
+				spanConference.style.display = session.formatLabel === 'Conference' ? '' : 'none';
+				spanQuickie.style.display = session.formatLabel === 'Quickie' ? '' : 'none';
+				spanCodelab.style.display = session.formatLabel === 'Codelab' ? '' : 'none';
+
+				const limitName = 25;
+				template.content.querySelector('.sessionName').innerHTML = session.name.substring(0,limitName) + (session.name.length > limitName ? '...' : '');
+				template.content.querySelector('.sessionSpeaker').innerHTML = `by
+					${session.speaker.firstname} ${session.speaker.lastname}`;
+
+				template.content.querySelector('.sessionDesc').innerHTML = `<em>${session.description.substring(0, 250)}</em>`;
+				template.content.querySelector('.sessionMean').innerHTML = `<strong>${Math.max(session.mean, 1)}</strong>`;
+
+				template.content.querySelector('.coSpeaker').style.display = (session.cospeakers && session.cospeakers.length > 0) ? '' : 'none';
+				template.content.querySelector('.transport').style.display = 'none';
+				template.content.querySelector('.hotel').style.display = 'none';
+				template.content.querySelector('.travel').style.display = 'none';
+
+				template.content.querySelector('.diffBeginner').style.display = (session.difficulty < 2) ? '' : 'none';
+				template.content.querySelector('.diffConfirm').style.display = (session.difficulty < 3) ? '' : 'none';
+				template.content.querySelector('.diffExpert').style.display = (session.difficulty < 4) ? '' : 'none';
+
+				const indications = template.content.querySelector('.loveAndHate');
+				indications.innerHTML = '';
+
+				if (session.votes) {
+					session.votes.forEach((vote) => {
+						if (vote.love){
+							indications.innerHTML += '<span class="glyphicon glyphicon-heart-empty"></span>';
+						}else if (vote.hate){
+							indications.innerHTML += '<span class="glyphicon glyphicon-alert"></span>';
+						}
+					});
+				}
+
+				// On clone la ligne et on l'insère dans le tableau
+				var clone = document.importNode(template.content, true);
+				document.body.appendChild(clone);
+			}
+		})()
+	</script>
+</body>
+
+</html>
